@@ -91,7 +91,7 @@ resource "aws_security_group" "jenkins_security_group" {
 
 resource "aws_key_pair" "jenkins_auth" {
   key_name   = "dev_key"
-  public_key = file("~/.ssh/dev_key.pub")
+  public_key = file("~/Terraform/Terraform/.ssh/dev_key.pub")
 }
 
 
@@ -107,7 +107,22 @@ resource "aws_instance" "jenkins_master" {
     volume_size = 10
   }
 
+  network_interface {
+    network_interface_id = aws_network_interface.jenkins_master_network_interface.id
+    device_index         = 0
+  }
+
   tags = {
     Name = "jenkins-master"
   }
 }
+
+resource "aws_network_interface" "jenkins_master_network_interface" {
+  subnet_id   = aws_subnet.jenkins_subnet.id
+  private_ips = ["10.20.0.10"]
+
+  tags = {
+    Name = "primary_network_interface"
+  }
+}
+
