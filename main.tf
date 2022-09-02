@@ -103,6 +103,8 @@ resource "aws_instance" "jenkins_master" {
   vpc_security_group_ids = [aws_security_group.jenkins_security_group.id]
   subnet_id              = aws_subnet.jenkins_subnet.id
 
+  user_data = file("userdata.tpl")
+
   root_block_device {
     volume_size = 10
   }
@@ -134,7 +136,30 @@ resource "aws_eip" "jenkins_eip" {
   depends_on                = [aws_internet_gateway.jenkins_internet_gw]
 }
 
+
 resource "aws_eip_association" "jenkins_eip_assoc" {
   instance_id   = aws_instance.jenkins_master.id
   allocation_id = aws_eip.jenkins_eip.id
+}
+
+resource "aws_instance" "jenkins-builder1" {
+  ami           = data.aws_ami.jenkings-ubuntu.id
+  instance_type = "t2.micro"
+
+  key_name               = aws_key_pair.jenkins_auth.id
+  vpc_security_group_ids = [aws_security_group.jenkins_security_group.id]
+  subnet_id              = aws_subnet.jenkins_subnet.id
+  private_ip             = "10.20.0.11"
+
+  user_data = file("builderdata.tpl")
+
+  root_block_device {
+    volume_size = 10
+  }
+
+  tags = {
+    Name = "jenkins_builder1"
+  }
+
+
 }
