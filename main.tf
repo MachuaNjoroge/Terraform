@@ -126,3 +126,15 @@ resource "aws_network_interface" "jenkins_master_network_interface" {
   }
 }
 
+resource "aws_eip" "jenkins_eip" {
+  vpc = true
+
+  #instance                  = aws_instance.jenkins_master.id
+  associate_with_private_ip = "10.20.0.10"
+  depends_on                = [aws_internet_gateway.jenkins_internet_gw]
+}
+
+resource "aws_eip_association" "jenkins_eip_assoc" {
+  instance_id   = aws_instance.jenkins_master.id
+  allocation_id = aws_eip.jenkins_eip.id
+}

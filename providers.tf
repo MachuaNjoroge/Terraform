@@ -12,3 +12,4 @@ provider "aws" {
   profile                  = "default"
   shared_credentials_files = ["~/Terraform/Terraform/.aws/credentials"]
 }
+
