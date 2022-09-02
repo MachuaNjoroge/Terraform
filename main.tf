@@ -143,8 +143,9 @@ resource "aws_eip_association" "jenkins_eip_assoc" {
 }
 
 resource "aws_instance" "jenkins-builder1" {
-  ami           = data.aws_ami.jenkings-ubuntu.id
-  instance_type = "t2.micro"
+  ami                  = data.aws_ami.jenkings-ubuntu.id
+  instance_type        = "t2.micro"
+  iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name
 
   key_name               = aws_key_pair.jenkins_auth.id
   vpc_security_group_ids = [aws_security_group.jenkins_security_group.id]
@@ -161,5 +162,26 @@ resource "aws_instance" "jenkins-builder1" {
     Name = "jenkins_builder1"
   }
 
+}
 
+resource "aws_iam_role" "jenkins_ec2_access_role" {
+  name               = "ec2-role"
+  assume_role_policy = file("assumerolepolicy.json")
+}
+
+resource "aws_iam_policy" "jenkins_elastic_beanstalk_policy" {
+  name        = "beanstalk_policy"
+  description = "This policy grants AdministratorAccess-AWSElasticBeanstalk AWS built in policy"
+  policy      = file("elasticbeanstalkpolicy.json")
+}
+
+resource "aws_iam_policy_attachment" "jenkins_beanstalk_policy_attachment" {
+  name       = "jenkins_beanstalk_attachment"
+  roles      = [aws_iam_role.jenkins_ec2_access_role.name]
+  policy_arn = aws_iam_policy.jenkins_elastic_beanstalk_policy.arn
+}
+
+resource "aws_iam_instance_profile" "jenkins_instance_profile" {
+  name = "instance_profile"
+  role = aws_iam_role.jenkins_ec2_access_role.name
 }
