@@ -104,7 +104,7 @@ resource "aws_key_pair" "jenkins_auth" {
 
 
 resource "aws_instance" "jenkins_master" {
-  ami           = data.aws_ami.jenkings-ubuntu.id
+  ami           = data.aws_ami.ubuntu_2004.id
   instance_type = "t2.micro"
 
   key_name               = aws_key_pair.jenkins_auth.id
@@ -151,7 +151,7 @@ resource "aws_eip_association" "jenkins_eip_assoc" {
 }
 
 resource "aws_instance" "jenkins-builder1" {
-  ami                  = data.aws_ami.jenkings-ubuntu.id
+  ami                  = data.aws_ami.amazon_linux_2.id
   instance_type        = "t2.micro"
   iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name
 
