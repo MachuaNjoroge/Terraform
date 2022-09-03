@@ -44,7 +44,7 @@ resource "aws_route_table_association" "jenkins_route_table_assoc" {
 }
 
 
-resource "aws_security_group" "jenkins_security_group" {
+resource "aws_security_group" "jenkins_master_security_group" {
   name        = "allow_tls"
   description = "Allow TLS inbound traffic"
   vpc_id      = aws_vpc.jenkins_vpc.id
@@ -83,6 +83,10 @@ resource "aws_security_group" "jenkins_security_group" {
     cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
+  lifecycle {
+    # Necessary if changing 'name' or 'name_prefix' properties.
+    create_before_destroy = true
+  }
 
   tags = {
     Name = "web_and_ssh_access"
@@ -90,8 +94,12 @@ resource "aws_security_group" "jenkins_security_group" {
 }
 
 resource "aws_key_pair" "jenkins_auth" {
-  key_name   = "dev_key"
-  public_key = file("~/Terraform/Terraform/.ssh/dev_key.pub")
+  key_name   = "master_key"
+  public_key = file("~/Terraform/Terraform/.ssh/master_key.pub")
+
+  tags =  {
+    Name = "jenkins_master_keys"
+  }
 }
 
 
@@ -100,7 +108,7 @@ resource "aws_instance" "jenkins_master" {
   instance_type = "t2.micro"
 
   key_name               = aws_key_pair.jenkins_auth.id
-  vpc_security_group_ids = [aws_security_group.jenkins_security_group.id]
+  vpc_security_group_ids = [aws_security_group.jenkins_master_security_group.id]
   subnet_id              = aws_subnet.jenkins_subnet.id
 
   user_data = file("userdata.tpl")
@@ -148,7 +156,7 @@ resource "aws_instance" "jenkins-builder1" {
   iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name
 
   key_name               = aws_key_pair.jenkins_auth.id
-  vpc_security_group_ids = [aws_security_group.jenkins_security_group.id]
+  vpc_security_group_ids = [aws_security_group.jenkins_master_security_group.id]
   subnet_id              = aws_subnet.jenkins_subnet.id
   private_ip             = "10.20.0.11"
 
@@ -184,4 +192,45 @@ resource "aws_iam_policy_attachment" "jenkins_beanstalk_policy_attachment" {
 resource "aws_iam_instance_profile" "jenkins_instance_profile" {
   name = "instance_profile"
   role = aws_iam_role.jenkins_ec2_access_role.name
+}
+
+resource "aws_key_pair" "builder-key-pair"{
+  key_name   = "builder_key"
+  public_key = file("~/Terraform/Terraform/.ssh/builder_key.pub")
+
+  tags = {
+    Name = "jenkins_builder_keys"
+  }
+}
+
+resource "aws_security_group" "jenkins_builder_security_group" {
+  name = "builder_security_group"
+  description = "Allow connection to jenkins buider machines from master"
+  vpc_id = aws_vpc.jenkins_vpc.id
+
+  ingress {
+    description = "Allow access from the jenkins_master security group"
+    from_port = 0
+    to_port = 0
+    protocol = "-1"
+    security_groups = [aws_security_group.jenkins_master_security_group.id]
+  }
+
+  egress {
+    description = "Allow all egress traffic"
+    to_port = 0
+    from_port = 0
+    protocol = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+    ipv6_cidr_blocks = ["::/0"]
+  }
+
+  lifecycle {
+  # Necessary if changing 'name' or 'name_prefix' properties.
+    create_before_destroy = true
+  }
+
+  tags = {
+    Name = "buider_security_group"
+  }
 }
