@@ -7,43 +7,13 @@
                 "acm:Describe*",
                 "acm:List*",
                 "autoscaling:Describe*",
-                "cloudformation:Describe*",
-                "cloudformation:Estimate*",
-                "cloudformation:Get*",
-                "cloudformation:List*",
-                "cloudformation:Validate*",
-                "cloudtrail:LookupEvents",
-                "cloudwatch:DescribeAlarms",
-                "cloudwatch:GetMetricStatistics",
-                "cloudwatch:ListMetrics",
-                "codecommit:Get*",
-                "codecommit:UploadArchive",
-                "ec2:AllocateAddress",
-                "ec2:AssociateAddress",
-                "ec2:AuthorizeSecurityGroup*",
-                "ec2:CreateLaunchTemplate*",
-                "ec2:CreateSecurityGroup",
-                "ec2:CreateTags",
-                "ec2:DeleteLaunchTemplate*",
-                "ec2:DeleteSecurityGroup",
-                "ec2:DeleteTags",
-                "ec2:Describe*",
-                "ec2:DisassociateAddress",
-                "ec2:ReleaseAddress",
-                "ec2:RevokeSecurityGroup*",
-                "ecs:CreateCluster",
-                "ecs:DeRegisterTaskDefinition",
-                "ecs:Describe*",
-                "ecs:List*",
-                "ecs:RegisterTaskDefinition",
+                "cloudformation:*",
+                "codecommit:*",
+                "ec2:*",
+                "ecs:*",
                 "elasticbeanstalk:*",
                 "elasticloadbalancing:Describe*",
-                "iam:GetRole",
-                "iam:ListAttachedRolePolicies",
-                "iam:ListInstanceProfiles",
-                "iam:ListRolePolicies",
-                "iam:ListRoles",
-                "iam:ListServerCertificates",
+                "iam:*",
                 "logs:Describe*",
                 "rds:Describe*",
                 "s3:ListAllMyBuckets",
@@ -68,16 +38,7 @@
         {
             "Effect": "Allow",
             "Action": [
-                "cloudformation:CancelUpdateStack",
-                "cloudformation:ContinueUpdateRollback",
-                "cloudformation:CreateStack",
-                "cloudformation:DeleteStack",
-                "cloudformation:GetTemplate",
-                "cloudformation:ListStackResources",
-                "cloudformation:SignalResource",
-                "cloudformation:TagResource",
-                "cloudformation:UntagResource",
-                "cloudformation:UpdateStack"
+                "cloudformation:*"
             ],
             "Resource": [
                 "arn:aws:cloudformation:*:*:stack/awseb-*",
@@ -98,25 +59,9 @@
         {
             "Effect": "Allow",
             "Action": [
-                "codebuild:BatchGetBuilds",
-                "codebuild:CreateProject",
-                "codebuild:DeleteProject",
-                "codebuild:StartBuild"
+                "codebuild:*"
             ],
             "Resource": "arn:aws:codebuild:*:*:project/Elastic-Beanstalk-*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:CreateTable",
-                "dynamodb:DeleteTable",
-                "dynamodb:DescribeTable",
-                "dynamodb:TagResource"
-            ],
-            "Resource": [
-                "arn:aws:dynamodb:*:*:table/awseb-e-*",
-                "arn:aws:dynamodb:*:*:table/eb-*"
-            ]
         },
         {
             "Effect": "Allow",
@@ -147,13 +92,6 @@
         {
             "Effect": "Allow",
             "Action": [
-                "ecs:DeleteCluster"
-            ],
-            "Resource": "arn:aws:ecs:*:*:cluster/awseb-*"
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
                 "elasticloadbalancing:*Rule",
                 "elasticloadbalancing:*Tags",
                 "elasticloadbalancing:SetRulePriorities",
@@ -171,18 +109,7 @@
                 "elasticloadbalancing:*"
             ],
             "Resource": [
-                "arn:aws:elasticloadbalancing:*:*:targetgroup/awseb-*",
-                "arn:aws:elasticloadbalancing:*:*:targetgroup/eb-*",
-                "arn:aws:elasticloadbalancing:*:*:loadbalancer/awseb-*",
-                "arn:aws:elasticloadbalancing:*:*:loadbalancer/eb-*",
-                "arn:aws:elasticloadbalancing:*:*:loadbalancer/*/awseb-*/*",
-                "arn:aws:elasticloadbalancing:*:*:loadbalancer/*/eb-*/*",
-                "arn:aws:elasticloadbalancing:*:*:listener/awseb-*",
-                "arn:aws:elasticloadbalancing:*:*:listener/eb-*",
-                "arn:aws:elasticloadbalancing:*:*:listener/*/awseb-*/*/*",
-                "arn:aws:elasticloadbalancing:*:*:listener/*/eb-*/*/*",
-                "arn:aws:elasticloadbalancing:*:*:listener-rule/app/awseb-*/*/*/*",
-                "arn:aws:elasticloadbalancing:*:*:listener-rule/app/eb-*/*/*/*"
+                "arn:aws:elasticloadbalancing:*:*:*"
             ]
         },
         {
@@ -266,27 +193,6 @@
         {
             "Effect": "Allow",
             "Action": [
-                "rds:*DBSubnetGroup",
-                "rds:AuthorizeDBSecurityGroupIngress",
-                "rds:CreateDBInstance",
-                "rds:CreateDBSecurityGroup",
-                "rds:DeleteDBInstance",
-                "rds:DeleteDBSecurityGroup",
-                "rds:ModifyDBInstance",
-                "rds:RestoreDBInstanceFromDBSnapshot"
-            ],
-            "Resource": [
-                "arn:aws:rds:*:*:db:*",
-                "arn:aws:rds:*:*:secgrp:awseb-e-*",
-                "arn:aws:rds:*:*:secgrp:eb-*",
-                "arn:aws:rds:*:*:snapshot:*",
-                "arn:aws:rds:*:*:subgrp:awseb-e-*",
-                "arn:aws:rds:*:*:subgrp:eb-*"
-            ]
-        },
-        {
-            "Effect": "Allow",
-            "Action": [
                 "s3:Delete*",
                 "s3:Get*",
                 "s3:Put*"
@@ -296,34 +202,21 @@
         {
             "Effect": "Allow",
             "Action": [
-                "s3:CreateBucket",
-                "s3:GetBucket*",
-                "s3:ListBucket",
-                "s3:PutBucketPolicy"
+                "s3:*"
             ],
             "Resource": "arn:aws:s3:::elasticbeanstalk-*"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "sns:CreateTopic",
-                "sns:DeleteTopic",
-                "sns:GetTopicAttributes",
-                "sns:Publish",
-                "sns:SetTopicAttributes",
-                "sns:Subscribe",
-                "sns:Unsubscribe"
+                "sns:*"
             ],
             "Resource": "arn:aws:sns:*:*:ElasticBeanstalkNotifications-*"
         },
         {
             "Effect": "Allow",
             "Action": [
-                "sqs:*QueueAttributes",
-                "sqs:CreateQueue",
-                "sqs:DeleteQueue",
-                "sqs:SendMessage",
-                "sqs:TagQueue"
+                "sqs:*"
             ],
             "Resource": [
                 "arn:aws:sqs:*:*:awseb-e-*",

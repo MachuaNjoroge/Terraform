@@ -50,30 +50,32 @@ resource "aws_security_group" "jenkins_master_security_group" {
   vpc_id      = aws_vpc.jenkins_vpc.id
 
   ingress {
-    description      = "TLS from VPC"
-    from_port        = 443
-    to_port          = 443
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.jenkins_vpc.cidr_block]
-    ipv6_cidr_blocks = [aws_vpc.jenkins_vpc.ipv6_cidr_block]
+    description = "TLS to VPC"
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    #cidr_blocks restricts source. Setting only our VPC means that the instance is not available from internet
+    #cidr_blocks = [aws_vpc.jenkins_vpc.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description      = "HTTP from VPC"
-    from_port        = 80
-    to_port          = 80
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.jenkins_vpc.cidr_block]
-    ipv6_cidr_blocks = [aws_vpc.jenkins_vpc.ipv6_cidr_block]
+    description = "HTTP to VPC"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    #cidr_blocks = [aws_vpc.jenkins_vpc.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
-    description      = "ssh from VPC"
-    from_port        = 22
-    to_port          = 22
-    protocol         = "tcp"
-    cidr_blocks      = [aws_vpc.jenkins_vpc.cidr_block]
-    ipv6_cidr_blocks = [aws_vpc.jenkins_vpc.ipv6_cidr_block]
+    description = "ssh to VPC"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    #Put cidr access to be you public IP and not 0.0.0.0/0 which means all IPs
+    #cidr_blocks = [aws_vpc.jenkins_vpc.cidr_block]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
@@ -97,7 +99,7 @@ resource "aws_key_pair" "jenkins_auth" {
   key_name   = "master_key"
   public_key = file("~/Terraform/Terraform/.ssh/master_key.pub")
 
-  tags =  {
+  tags = {
     Name = "jenkins_master_keys"
   }
 }
@@ -106,10 +108,10 @@ resource "aws_key_pair" "jenkins_auth" {
 resource "aws_instance" "jenkins_master" {
   ami           = data.aws_ami.ubuntu_2004.id
   instance_type = "t2.micro"
-
-  key_name               = aws_key_pair.jenkins_auth.id
-  vpc_security_group_ids = [aws_security_group.jenkins_master_security_group.id]
-  subnet_id              = aws_subnet.jenkins_subnet.id
+  #vpc_security_group_ids can be specified in either network interface or aws instance but not both
+  #vpc_security_group_ids = [aws_security_group.jenkins_master_security_group.id] 
+  key_name = aws_key_pair.jenkins_auth.id
+  #subnet_id              = aws_subnet.jenkins_subnet.id
 
   user_data = file("userdata.tpl")
 
@@ -127,12 +129,14 @@ resource "aws_instance" "jenkins_master" {
   }
 }
 
+
 resource "aws_network_interface" "jenkins_master_network_interface" {
-  subnet_id   = aws_subnet.jenkins_subnet.id
-  private_ips = ["10.20.0.10"]
+  subnet_id       = aws_subnet.jenkins_subnet.id
+  private_ips     = ["10.20.0.10"]
+  security_groups = [aws_security_group.jenkins_master_security_group.id]
 
   tags = {
-    Name = "primary_network_interface"
+    Name = "jenkins_master_network_interface"
   }
 }
 
@@ -151,11 +155,12 @@ resource "aws_eip_association" "jenkins_eip_assoc" {
 }
 
 resource "aws_instance" "jenkins-builder1" {
-  ami                  = data.aws_ami.amazon_linux_2.id
-  instance_type        = "t2.micro"
-  iam_instance_profile = aws_iam_instance_profile.jenkins_instance_profile.name
+  ami                         = data.aws_ami.amazon_linux_2.id
+  instance_type               = "t2.micro"
+  iam_instance_profile        = aws_iam_instance_profile.jenkins_instance_profile.name
+  associate_public_ip_address = "true"
 
-  key_name               = aws_key_pair.jenkins_auth.id
+  key_name               = aws_key_pair.builder-key-pair.id
   vpc_security_group_ids = [aws_security_group.jenkins_master_security_group.id]
   subnet_id              = aws_subnet.jenkins_subnet.id
   private_ip             = "10.20.0.11"
@@ -174,7 +179,7 @@ resource "aws_instance" "jenkins-builder1" {
 
 resource "aws_iam_role" "jenkins_ec2_access_role" {
   name               = "ec2-role"
-  assume_role_policy = file("assumerolepolicy.json")
+  assume_role_policy = data.aws_iam_policy_document.builder-assume-role-policy.json
 }
 
 resource "aws_iam_policy" "jenkins_elastic_beanstalk_policy" {
@@ -194,7 +199,7 @@ resource "aws_iam_instance_profile" "jenkins_instance_profile" {
   role = aws_iam_role.jenkins_ec2_access_role.name
 }
 
-resource "aws_key_pair" "builder-key-pair"{
+resource "aws_key_pair" "builder-key-pair" {
   key_name   = "builder_key"
   public_key = file("~/Terraform/Terraform/.ssh/builder_key.pub")
 
@@ -204,29 +209,29 @@ resource "aws_key_pair" "builder-key-pair"{
 }
 
 resource "aws_security_group" "jenkins_builder_security_group" {
-  name = "builder_security_group"
+  name        = "builder_security_group"
   description = "Allow connection to jenkins buider machines from master"
-  vpc_id = aws_vpc.jenkins_vpc.id
+  vpc_id      = aws_vpc.jenkins_vpc.id
 
   ingress {
-    description = "Allow access from the jenkins_master security group"
-    from_port = 0
-    to_port = 0
-    protocol = "-1"
+    description     = "Allow access from the jenkins_master security group"
+    from_port       = 0
+    to_port         = 0
+    protocol        = "-1"
     security_groups = [aws_security_group.jenkins_master_security_group.id]
   }
 
   egress {
-    description = "Allow all egress traffic"
-    to_port = 0
-    from_port = 0
-    protocol = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    description      = "Allow all egress traffic"
+    to_port          = 0
+    from_port        = 0
+    protocol         = "-1"
+    cidr_blocks      = ["0.0.0.0/0"]
     ipv6_cidr_blocks = ["::/0"]
   }
 
   lifecycle {
-  # Necessary if changing 'name' or 'name_prefix' properties.
+    # Necessary if changing 'name' or 'name_prefix' properties.
     create_before_destroy = true
   }
 
